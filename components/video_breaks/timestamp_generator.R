@@ -1,0 +1,193 @@
+# Determining conditions
+library(tidyverse)
+
+# This script aims to define the times at which video playback will start and stop in order to sample subject assessments for the purpose of interpolation. 
+# There are a few things to consider in this process. We have approval to enroll 110 subjects:
+N = 110
+
+# We must use those 110 subjects to evenly sample from roughly 1337 possible points:
+stim_dur <- (22 * 60) + 17                    # How many seconds are in each of our stimuli
+n_stim <- 2                                   # How many stimuli we have
+TR <- 2                                       # The duration of our TR
+possible_breaks <- (stim_dur * n_stim) / TR   # How many points at which we could potentially get a useful annotation 
+
+# Though I would be fine not sampling at all from the first thirty seconds so that the plot has an opportunity to develop
+possible_breaks <- ((30 / TR) + 1):possible_breaks
+
+# and so we are left with 1322 seconds which we have to sample from frequently enough to interpolate a representative timecourse but not so often that we disrupt the viewing experience. For example, if each subject only provided ten ratings (an average of once every 4.5 minutes), we would only have about 0.83 datapoints per TR. 
+length(possible_breaks) / (N * 10)
+
+# This also demonstrates why it's important that we be efficient and target *useful* annotation points ; sampling EVERY point would increase our recruitment burden and the rating burden on subjects dramatically! 
+# Let's create a dataframe with every sampling possibility
+rate = 1:88
+interval = (length(possible_breaks) / rate) * 2
+obs = rate * N
+obs_per_break = obs / length(possible_breaks)
+sample_options <- data.frame(rate, 
+                                 interval,
+                                 obs,
+                                 obs_per_break) %>%
+  
+# I don't want to sample more often than once per minute for concern over sampling too frequently
+  filter(interval > 60) %>%
+  
+# I also want to make sure we're getting at least 2 datapoints for each TR
+  filter (obs_per_break > 2)
+
+# and it looks like the median is about 34 samples or once ever 1m18s for an average of 2.83 observations every TR
+sample_options[sample_options$rate == round(median(sample_options$rate)),]
+rm(rate, interval, obs, obs_per_break, possible_breaks)
+
+# I googled some options for simulating data to assess the fit of sampling frequency but there aren't a lot of good options. I'm going to create a .csv document containing 110 columns, each of which will contain a unique array of 34 timestamps at which the video should pause. All time stamps will be a multiple of the TR. Also, all time stamps will be contained some time between 30s and 44m32s. The pauses will never be within 1 minute of one another. Lastly, no TR will appear more than three times or fewer than two to ensure uniform sampling. 
+
+set.seed(123) 
+obs_per_N <- 34
+min_interval <- 60
+obs_per_break <- 2.83
+start <- 30
+end <- n_stim * stim_dur
+window_size <- (end - start) / obs_per_N
+
+# Generate pool of even timestamps between 30 and 2672 seconds
+timestamps_pool <- sort(rep(seq(start, end, TR), ceiling(obs_per_break)))
+
+# Initialize empty dataframe
+timestamp_df <- as.data.frame(matrix(NA, nrow = obs_per_N, ncol = N))
+
+# Iterate through each row
+for (ROW in 1:nrow(timestamp_df)) {
+  
+  # If this is the first timestamp for each subject
+  if (ROW == 1){
+    upper_cutoff <- start + window_size   # Pull from timepoints between the start and first window
+    indices <- 1:N  # Iterate through subjects in an ascending order
+  }
+  
+  # If this is a later timestamp for each subject
+  if (ROW != 1){
+    lower_cutoff <- upper_cutoff  # Use the former upper_cutoff as the lower cutoff
+    upper_cutoff <- upper_cutoff + window_size # Add the window to the lower cutoff 
+    if (upper_cutoff > end){  # If the upper cutoff happens to be larger than the latest possible timepoint
+      upper_cutoff <- end   # Redefine it as the latest possible timepoint
+    }
+    indices <- timestamp_df[ROW - 1,] %>% as.numeric() %>% order(., decreasing = TRUE)  # Then reorder the subject indices by order of largest to smallest previous timestamp (if the last timestamp was high AND we want at least 60s between timestamps, there is a smaller pool of options to pull from and I don't want the randomization stalling out because the pool was exhausted by the time it reached a subject with more difficult demands to meet)
+  }
+  
+  # Iterate through each subject, or column
+  for (COL in indices) {
+    
+    # If this is the first timestamp for each subject
+    if (ROW == 1){
+      selection <-  timestamps_pool[timestamps_pool < upper_cutoff] %>% # subset the timestamps pool to values below the upper threshold
+                    sample(x = ., size = 1) # and randomly choose one option
+      timestamp_df[ROW, COL] <- selection # assign that value to this subject
+      timestamps_pool <- timestamps_pool[-(which(timestamps_pool == selection)[1])] # Remove that selection from the available options for future sampling
+    }
+    
+    # If this is a later timestamp for each subject 
+    if (ROW != 1){
+      selection <-  timestamps_pool[timestamps_pool < upper_cutoff & timestamps_pool >= lower_cutoff] %>% # subset the timestamps pool to values below the upper threshold and above the lower threshold
+                    .[(. - timestamp_df[ROW-1,COL]) > min_interval] %>% # Remove any timestamp that is within the minimum interval of their last timestamp
+                    sample(x = ., size = 1)  # and randomly choose one of the remaining options
+      timestamp_df[ROW, COL] <- selection # assign that value to this subject
+      timestamps_pool <- timestamps_pool[-(which(timestamps_pool == selection)[1])]  # Remove that selection from the available options for future sampling
+    }
+    
+    # If this is the last timestamp
+    if (ROW == nrow(timestamp_df)){
+      
+      # Check that all values are after the start time 
+      if (any(timestamp_df[,COL] < start)){
+        print(paste0("Start time too early for column ", COL)) 
+      }
+      
+      # and before the end time
+      if (any(timestamp_df[,COL] > end)){
+        print(paste0("End time too late for column ", COL)) 
+      }
+    }
+  }
+}
+
+# To QA the resultant dataframe
+
+timestamp_vector <- timestamp_df %>% as.matrix() %>% as.vector() # Flattening our matrix into a vector
+corrections_needed <- NULL # Creating an empty array for values that need corrections 
+possible_replacement <- NULL  # Creating an empty array for values that are over sampled (i.e., appears 3 times)
+# Iterate through all possible unique timestamp values
+for (VALUE in seq(start,end - 1,TR)){
+  if (sum(timestamp_vector == VALUE, na.rm = TRUE) < 2){ # If any value has appeared fewer than 2 times
+    corrections_needed <- c(corrections_needed, VALUE) # Save it to the array
+  }
+  if (sum(timestamp_vector == VALUE, na.rm = TRUE) > 2){ # If any value has appeared more than 2 times
+    possible_replacement <- c(possible_replacement, VALUE)  # Save it to the array
+  }
+}
+
+# Iterate through all values needing a correction
+for (CORRECTION in corrections_needed){
+  repeat_iteration <- TRUE # Create a variable to break the while loop when needed
+  while (repeat_iteration){
+    # Identify all values near the target correction that could be replaced (40s was arbitrary)
+    replaced_value <- possible_replacement[possible_replacement > CORRECTION - 20 & 
+                                             possible_replacement < CORRECTION + 20] %>%
+                      sample(., size = 1) # Choose one option randomly
+    replaced_index <- which(timestamp_df == replaced_value, arr.ind = TRUE) # Get the indices of the choice
+    replaced_row <- replaced_index[1,1] %>% as.numeric() # isolate the row index
+    replaced_col <- replaced_index[sample(1:3, 1), 2] %>% as.numeric() # isolate the column index
+    if (CORRECTION - timestamp_df[replaced_row - 1, replaced_col] >= min_interval){ # if the choice is more than than the minimum interval away from the previous timestamp
+      repeat_iteration <- FALSE # Break the loop
+    } 
+  }
+  timestamp_df[replaced_row, replaced_col] <- CORRECTION # Fill that target index with the corrected value
+}
+
+# Let's do a final check that all values appear 2 or3 times
+timestamp_vector <- timestamp_df %>% as.matrix() %>% as.vector()
+for (VALUE in seq(start,end - 1,TR)){
+  if (sum(timestamp_vector == VALUE, na.rm = TRUE) < 2){
+    print(paste0(VALUE, " only appears ", sum(timestamp_vector == VALUE, na.rm = TRUE) , " times"))
+  }
+}
+
+# and that no values are within 60s of one another
+QA <- timestamp_df
+for (COL in 1:ncol(QA)){
+  QA[,COL] <- diff(c(0,QA[,COL]))
+  if (any(timestamp_df[2:nrow(timestamp_df),COL] < min_interval)){
+    print(paste0("Samples too in proximity for column ", COL)) 
+  }
+}
+
+# Write to a javascript file
+# Assign new column names
+names(timestamp_df) <- sprintf("DH-%03d", 1:ncol(timestamp_df))
+write.csv(timestamp_df, "timestamps.csv")
+
+# Initialize an empty string to store the entire JavaScript code
+all_js_code <- ""
+
+# Iterate over each column in the dataframe
+for (FILE in 1:ncol(timestamp_df)) {
+  
+  # Create the 'breaks' array string with values from the current column
+  breaks_values <- timestamp_df[, FILE] %>% 
+    unique() %>% 
+    as.character() %>% 
+    paste(., collapse = "', '") %>% 
+    paste0("breaks = ['", ., "']")
+  
+  # Construct the full JavaScript if statement
+  js_code <- paste0("if (break_id == '", names(timestamp_df)[FILE], "'){\n    ", breaks_values, "\n}\n")
+  
+  # Append the current JavaScript code to the overall string
+  all_js_code <- paste0(all_js_code, js_code)
+}
+
+# Write the entire JavaScript code to a single file
+write.table(all_js_code, 
+            paste0(here::here(), "/components/video_breaks/break_ids.js"), 
+            row.names = FALSE,
+            col.names = FALSE,
+            quote = FALSE)
+
