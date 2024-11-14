@@ -165,9 +165,6 @@ for (let i = 0; i < indices.length; i++) {
   emotions_rand.push(emotions[indices[i]]);
 }
 
-// Creating an array to portrait filepaths
-var portrait_filepaths = new Array(portraits.length).fill('components/portraits/');
-
 // Create a variable to store the filepath to our stimulus
 var stimvid = ['components/stim/StimVid_Undoing1.mp4', 'components/stim/StimVid_Undoing2.mp4']
 
@@ -205,6 +202,14 @@ var background_portraits = ['components/portraits/StimImgJonathanFraser.PNG', 'c
                             'components/portraits/StimImgMiguelAlves.PNG', 'components/portraits/StimImgFernandoAlves.PNG', 
                             'components/portraits/StimImgSylviaSteinetz.PNG', 'components/portraits/StimImgRobertAdelman.PNG', 
                             'components/portraits/StimImgJoeMendoza.PNG']
+
+// Counterbalancing assessment labels
+var label_condition = jsPsych.randomization.sampleWithoutReplacement(['A', 'B'])
+if (label_condition[0] == 'A'){
+  var labels = [style_labels + '<strong>Not at all</strong></p>', style_labels + '<strong>Very much</strong></p>']
+} else {
+  var labels = [style_labels + '<strong>Very much</strong></p>', style_labels + '<strong>Not at all</strong></p>']
+}
 
 // ------ MISCELLANEOUS -----
 var error_Laptop = [
@@ -359,7 +364,7 @@ var consent_preload = {
 // Preloading our background portraits
 var portraits_preload = {
   type: jsPsychPreload,
-  images: [background_portraits, transp_portraits],
+  images: [background_portraits],
   message: 'Please wait while the experiment loads. This may take a few minutes.',
   data: {task: 'Preload'},
   on_finish: function(data) {
