@@ -60,7 +60,7 @@
       const params = new URLSearchParams(url.search);
           
       // Getting which break scheme should be used with this subject 
-      const break_id = 'DH-' + ("00" + ((params.get('participant') - 65) % 110)).slice(-3);
+      const break_id = 'ES-' + ("00" + ((params.get('participant')) % 110)).slice(-3);
       
       // Get the value associated with the 'id' parameter
       if (sona){
@@ -69,7 +69,7 @@
         subject_id = params.get('PROLIFIC_PID');
       }
     } else {
-      break_id = 'DH-999'
+      break_id = 'ES-999'
       subject_id = '99999'
     }
     
