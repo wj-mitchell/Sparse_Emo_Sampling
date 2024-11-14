@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Experiment Title -->
-  <title>Experiment</title>
+  <title>Sparse Emotion Sampling</title>
 
   <!-- Loading in libraries  -->
   <script src="jspsych_v7.0/dist/jspsych.js"></script>
@@ -129,8 +129,8 @@ const height = 700;
 const img_size = 300;
 
 // Assigning scale values
-var minimum = -100
-var maximum = 100
+var minimum = 0
+var maximum = 9
 var start = 0
 var slider_width = 700
 
@@ -153,30 +153,19 @@ const size_scale_labels = '<p style="font-size: 17px; line-height: 19px;">'
 const size_scale_questions = "<p style='font-size: 22px; line-height: 24px;'>"
 const style_response_labels = '<p style="font-size: 26px; line-height: 30px;">'
 
-// Creating an array to document character names\
-// NOTE: Chelsea doesn't want Elena included as of 10/24/24 over concerns that she represents a different level of construal for the guilt innoncence question than does other characters. 
-var names = [//'Elena Alves', 
-             'Fernando Alves', 'Franklin Reinhardt', 'Grace Fraser', 
-             'Henry Fraser', 'Jonathan Fraser', 'Miguel Alves', 'Sylvia Steinetz'];
-
-// Creating an array to document character portraits
-var portraits = [//'StimImgElenaAlves.PNG', 
-                 'StimImgFernandoAlves.PNG', 'StimImgFranklinReinhardt.PNG', 'StimImgGraceFraser.PNG',
-                 'StimImgHenryFraser.PNG', 'StimImgJonathanFraser.PNG', 'StimImgMiguelAlves.PNG', 'StimImgSylviaSteinetz.PNG'];
+// Creating an array to document emotion categories
+var emotions = ['anger', 'surprise', 'disgust', 'enjoyment', 'fear', 'sadness'];
 
 // Randomizing the order of the indices for the names and portraits
-var indices = jsPsych.randomization.sampleWithoutReplacement(Array.from({length: names.length}, (v, i) => i + 0));
+var indices = jsPsych.randomization.sampleWithoutReplacement(Array.from({length: emotions.length}, (v, i) => i + 0));
   
 // Reordering the previously noted arrays according to the new randomized order
-var names_rand = [];
-var portraits_rand = [];
+var emotions_rand = [];
 for (let i = 0; i < indices.length; i++) {
-  names_rand.push(names[indices[i]]);
-  portraits_rand.push(portraits[indices[i]]);
+  emotions_rand.push(emotions[indices[i]]);
 }
 
 // Creating an array to portrait filepaths
-var transparent_portrait_filepaths = new Array(portraits.length).fill('components/portraits_transparent/');
 var portrait_filepaths = new Array(portraits.length).fill('components/portraits/');
 
 // Create a variable to store the filepath to our stimulus
@@ -217,22 +206,6 @@ var background_portraits = ['components/portraits/StimImgJonathanFraser.PNG', 'c
                             'components/portraits/StimImgSylviaSteinetz.PNG', 'components/portraits/StimImgRobertAdelman.PNG', 
                             'components/portraits/StimImgJoeMendoza.PNG']
 
-// Creating an array of transparent portraits to preload
-var transp_portraits = ['components/portraits_transparent/StimImgJonathanFraser.PNG', 'components/portraits_transparent/StimImgHenryFraser.PNG', 
-                        'components/portraits_transparent/StimImgGraceFraser.PNG', 'components/portraits_transparent/StimImgFranklinReinhardt.PNG', 
-                        'components/portraits_transparent/StimImgElenaAlves.PNG',  'components/portraits_transparent/StimImgMiguelAlves.PNG', 
-                        'components/portraits_transparent/StimImgFernandoAlves.PNG', 'components/portraits_transparent/StimImgSylviaSteinetz.PNG']
-
-// Counterbalancing assessment labels
-var label_condition = jsPsych.randomization.sampleWithoutReplacement(['A', 'B'])
-if (label_condition[0] == 'A'){
-  var labels = [style_labels + '<strong>100%<br>Guilty</strong></p>', style_labels + '<strong>100%<br>Innocent</strong></p>']
-  var assessment_prompt_order = [' is guilty or innocent']
-} else {
-  var labels = [style_labels + '<strong>100%<br>Innocent</strong></p>', style_labels + '<strong>100%<br>Guilty</strong></p>']
-  var assessment_prompt_order = [' is innocent or guilty']
-}
-
 // ------ MISCELLANEOUS -----
 var error_Laptop = [
     style_instr + 'You must use a desktop/laptop computer to participate in this experiment.<br><br><br>If you are unable to do so or you are seeing the message in error please contact sanlab@temple.edu.</p>'
@@ -272,21 +245,21 @@ var instr_Intro = [
     style_instr + 'Before we begin, please be sure that you are in a good space to complete the experiment. This space should be: <br><br><br><br> <strong>Comfortable <br><br> Distraction-free <br><br> Available for the next 60 minutes</strong> <br><br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>', 
     style_instr + '<strong>Please give your full attention to the experiment. This includes:</strong> <br><br><br><br> Closing or minimizing other programs on your computer <br><br> Silencing your phone or placing it somewhere it will not be distracting <br><br> Testing that your audio is working and set to a comfortable volume that you can clearly hear <br><br> Not completing this experiment with others present <br><br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>', 
     style_instr + 'You will watch 45 minutes of a crime mystery drama in which one character is suspected of having murdered another.<br><br><br>We will present background information about the characters of the show and the surrounding context before the episode begins.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
-    style_instr + 'The video will intermittently pause while you watch to assess how certain <strong>you</strong> are that different characters in the show are guilty or innocent of having committed the murder.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
-    style_instr + "These certainty assessments tend to be flexible and may shift upon hearing something that a character says or seeing something that a character does or events that occur when a character is not on screen.<br><br><br>Some of this information may influence your assessments only slightly while other information may influence your assessments a great deal.<br><br><br>When prompted, please update your rating of how certain you are of each character's innocence or guilt at that moment in time. <br><br><br> Please try to be as precise as you can.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
-    style_instr + "These certainty assessments will be assessed on a continuous scale. <br><br><br> The scale ranges from 100% certain that a character is guilty to 100% certain that a character is innocent.<br><br><br>Leaving the scale in the middle (i.e., 0% certain) would indicate that you are completely uncertain whether a character is innocent or guilt.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
-    style_instr + "After your first rating, we will mark the scale where you had last rated that character to hopefully make updating your certainty rating easier. <br><br><br>A progress bar at the top will show the order in which you will assess the characters.<br><br><br>A portrait in the center of the screen will identify which character you are assessing at that moment.<br><br><br>Let's look at an example of what this looks like.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",    
+    style_instr + 'The video will intermittently pause the video to <strong>assess how strongly you feel different emotions</strong> while you watch the show.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
+    style_instr + "Emotional responses tend to be flexible and may shift upon hearing something that a character says or seeing something that a character does or events that occur during the show.<br><br><br>Some of these events may influence your emotions only slightly while other information may influence your emotions a great deal.<br><br><br>When prompted, please update your rating of your emotions. <br><br><br> Please try to be as precise as you can.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_instr + "These emotion assessments will be assessed on a 10-point scale. <br><br><br> The scale ranges from 'Not at all' (value of 0) to 'Very much' (value of 9).<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_instr + "After your first rating, we will mark the scale where you had last rated that emotion to hopefully make updating your emotion rating easier. <br><br><br>A statement in the center of the screen will identify which emotion you are assessing at that moment.<br><br><br>Let's look at an example of what this looks like.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",    
 ]
 
 // ------ PRACTICE RATING ------
 var instr_Practice = [ 
-    style_practice + 'You can move the slider left or right to indicate your rating. The current value of your rating will visualize above the scale and update as your move the slider. Press the button below the slider to submit your rating. <strong>Move the slider to indicate being 50% certain of innocence to start.</strong>' 
+    style_practice + 'You can use your mouse to move the slider left or right to indicate your rating. The current value of your rating will visualize above the scale and update as your move the slider. Press the button below the slider to submit your rating. <strong>Move the slider to indicate a value of 3 to start.</strong>' 
 ]
 var instr_PracticeSuccess = [ 
     style_instr + 'Great! If you have any questions that you must have answered before continuing, please contact study staff via the recruitment platform.<br><br><br>If you are ready to start, we will present the background information.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>' 
 ]
 var instr_PracticeFailure = [ 
-    style_practice + 'It appears that an error occurred and you <strong>did not</strong> enter the correct slider value.<br><br>Try again to indicate <strong>being 50% certain of innocence</strong> before we continue!' 
+    style_practice + 'It appears that an error occurred and you <strong>did not</strong> enter the correct slider value.<br><br>Try again to indicate <strong>a value of 3</strong> before we continue!' 
 ]
 
 // ------ BACKSTORY -----
@@ -303,13 +276,13 @@ backstory = [
 // ------ PRIMARY TASKS ------
 
 var assessment_prompt_beginning = [
-    'How certain are you that '
+    'How strongly do you feel '
 ]
 var assessment_prompt_end = [
-    "<br>of Elena Alves's death (i.e., that they had killed her)?<br>"
+    "right now?<br>"
 ]
 var marker_label = [
-    'Your Previous Rating <br> For This Character Was:'
+    'Your Previous Rating <br> For This Emotion Was:'
 ]
 var instr_IndDiff = [
     style_instr +'You have just completed our video task! Thank you for your continued effort and attention. <br><br> In our final task, we will ask you questions about yourself. Please read the instructions before each series of questions and answer the questions honestly to the best of your abilities.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>'
@@ -783,39 +756,32 @@ for (var i = 0; i < instr_Intro.length; i++) {
 timeline.push(portraits_preload)
 
 // | - - - - - Practice - - - - - - |
-// Create a temporary filepath array
-var temp_filepaths = transparent_portrait_filepaths;
-temp_filepaths[0] = 'components/portraits/';
-let progress_bar = temp_filepaths.map((item, index) => item + portraits_rand[index]);
-if (k == portraits_rand.length - 1){
-  temp_filepaths[0] = 'components/portraits_transparent/';
-}
 
 // Defining the success condition to move past the practice session
 if (label_condition[0] == 'A') {
-  var SuccessCondition = 50 
+  var SuccessCondition = 3 
 } else {
-  var SuccessCondition = -50
+  var SuccessCondition = 6
 }
 var PracticeComplete = false
 
 // Assessing how certain subjects are of each character's guilt or innocence
 var Practice = {
   type: jsPsychImageSliderResponseModified,
-  stimulus: 'components/portraits/' + portraits_rand[0],
+  stimulus: null,
   stimulus_height: img_size,
   stimulus_width: img_size,
-  top_images: progress_bar,
+  top_images: null,
   min: minimum,
   max: maximum,
   slider_start: start,
   slider_width: slider_width,
-  value_unit: "% Certain",
+  value_unit: "",
   labels: labels,
   prompt: instr_Practice,
   data: {
     task: 'Practice',
-    character: names_rand[0],
+    emotion: emotions_rand[0],
     label_condition: label_condition[0],
   },
   on_finish: function(data) {
@@ -830,20 +796,20 @@ var Practice = {
 // Have them repeat the practice task
 var PracticeFailure = {
   type: jsPsychImageSliderResponseModified,
-  stimulus: 'components/portraits/' + portraits_rand[0],
+  stimulus: null,
   stimulus_height: img_size,
   stimulus_width: img_size,
-  top_images: progress_bar,
+  top_images: null,
   min: minimum,
   max: maximum,
   slider_start: start,
   slider_width: slider_width,
-  value_unit: "% Certain",
+  value_unit: "",
   labels: labels,
   prompt: instr_PracticeFailure,
   data: {
     task: 'PracticeFailure',
-    character: names_rand[0],
+    emotion: emotions_rand[0],
     label_condition: label_condition[0]
   },
   on_finish: function(data) {
@@ -980,36 +946,25 @@ for (var i = 0; i < breaks.length; i++) {
     timeline.push(video);
 
     // Iterate through all of the different portraits
-    for (var k = 0; k < portraits_rand.length; k++) {
-
-      // Create a temporary filepath array
-      var temp_filepaths = transparent_portrait_filepaths;
-      temp_filepaths[k] = 'components/portraits/';
-      if (k > 0){
-        temp_filepaths[k-1] = 'components/portraits_transparent/';
-      }
-      let progress_bar = temp_filepaths.map((item, index) => item + portraits_rand[index]);
-      if (k == portraits_rand.length - 1){
-        temp_filepaths[k] = 'components/portraits_transparent/';
-      }
+    for (var k = 0; k < emotions_rand.length; k++) {
 
       // Assessing how certain subjects are of each character's guilt or innocence
       var assessment = {
         type: jsPsychImageSliderResponseModified,
-        stimulus: 'components/portraits/'+ portraits_rand[k],
+        stimulus: null,
         stimulus_height: img_size,
         stimulus_width:img_size,
-        top_images: progress_bar,
+        top_images: null,
         min: minimum,
         max: maximum,
         slider_start: start, 
         slider_width: slider_width,
-        value_unit: "% Certain",
+        value_unit: "",
         button_label: "<strong>Continue</strong><br>(Only Press Once!)",
         labels: labels,
-        prompt: [style_assess_prompt + assessment_prompt_beginning  + "<strong>" + names_rand[k] + "</strong>" + assessment_prompt_order + assessment_prompt_end + '</p>'],
+        prompt: [style_assess_prompt + assessment_prompt_beginning  + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
         data: {task: 'assessment ' + [k],
-              character: names_rand[k],
+              emotion: emotions_rand[k],
               label_condition: label_condition[0]
         },
         on_finish: function(data) {
@@ -1053,42 +1008,31 @@ for (var i = 0; i < breaks.length; i++) {
         timeline.push(video);
 
         // Iterate through all of the different portraits
-        for (var k = 0; k < portraits_rand.length; k++) {
-
-          // Create a temporary filepath array
-          var temp_filepaths = transparent_portrait_filepaths;
-          temp_filepaths[k] = 'components/portraits/';
-          if (k > 0){
-            temp_filepaths[k-1] = 'components/portraits_transparent/';
-          }
-          let progress_bar = temp_filepaths.map((item, index) => item + portraits_rand[index]);
-          if (k == portraits_rand.length - 1){
-            temp_filepaths[k] = 'components/portraits_transparent/';
-          }
+        for (var k = 0; k < emotions_rand.length; k++) {
 
           // Assessing how certain subjects are of each character's guilt or innocence
           var assessment = {
             type: jsPsychImageSliderResponseModified,
-            stimulus: 'components/portraits/'+ portraits_rand[k],
+            stimulus: null,
             stimulus_height: img_size,
             stimulus_width: img_size,
-            top_images: progress_bar,
+            top_images: null,
             min: minimum,
             max: maximum,
             slider_width: slider_width,
-            value_unit: "% Certain",
+            value_unit: "",
             button_label: "<strong>Continue</strong><br>(Only Press Once!)",
             labels: labels,
             marker_color: '#FF0000',
             marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + names_rand[k] + "</strong>" + assessment_prompt_order + assessment_prompt_end + '</p>'],
+            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
             data: {task: 'assessment ' + [k],
-                  character: names_rand[k],
+                  emotion: emotions_rand[k],
                   label_condition: label_condition[0]
             },
             on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(portraits_rand.length + 3).values()[0].response
-              trial.marker = jsPsych.data.get().last(portraits_rand.length + 3).values()[0].response
+              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 2).values()[0].response
+              trial.marker = jsPsych.data.get().last(emotions_rand.length + 2).values()[0].response
               trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
             },
             on_finish: function(data) {
@@ -1173,42 +1117,31 @@ for (var i = 0; i < breaks.length; i++) {
         timeline.push(video);
 
         // Iterate through all of the different portraits
-        for (var k = 0; k < portraits_rand.length; k++) {
-
-          // Create a temporary filepath array
-          var temp_filepaths = transparent_portrait_filepaths;
-          temp_filepaths[k] = 'components/portraits/';
-          if (k > 0){
-            temp_filepaths[k-1] = 'components/portraits_transparent/';
-          }
-          let progress_bar = temp_filepaths.map((item, index) => item + portraits_rand[index]);
-          if (k == portraits_rand.length - 1){
-            temp_filepaths[k] = 'components/portraits_transparent/';
-          }
+        for (var k = 0; k < emotions_rand.length; k++) {
 
           // Assessing how certain subjects are of each character's guilt or innocence
           var assessment = {
             type: jsPsychImageSliderResponseModified,
-            stimulus: 'components/portraits/'+ portraits_rand[k],
+            stimulus: null,
             stimulus_height: img_size,
             stimulus_width: img_size,
-            top_images: progress_bar,
+            top_images: null,
             min: minimum,
             max: maximum,
             slider_width: slider_width,
-            value_unit: "% Certain",
+            value_unit: "",
             button_label: "<strong>Continue</strong><br>(Only Press Once!)",
             labels: labels,
             marker_color: '#FF0000',
             marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + names_rand[k] + "</strong>" + assessment_prompt_order + assessment_prompt_end + '</p>'],
+            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
             data: {task: 'assessment ' + [k],
-                  character: names_rand[k],
+                  emotion: emotions_rand[k],
                   label_condition: label_condition[0]
             },
             on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(portraits_rand.length + 5 + preload_index_bump).values()[0].response
-              trial.marker = jsPsych.data.get().last(portraits_rand.length + 5 + preload_index_bump).values()[0].response
+              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 5 + preload_index_bump).values()[0].response
+              trial.marker = jsPsych.data.get().last(emotions_rand.length + 5 + preload_index_bump).values()[0].response
               trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
             },            
             on_finish: function(data) {
@@ -1254,42 +1187,31 @@ for (var i = 0; i < breaks.length; i++) {
         timeline.push(video);
 
         // Iterate through all of the different portraits
-        for (var k = 0; k < portraits_rand.length; k++) {
-
-          // Create a temporary filepath array
-          var temp_filepaths = transparent_portrait_filepaths;
-          temp_filepaths[k] = 'components/portraits/';
-          if (k > 0){
-            temp_filepaths[k-1] = 'components/portraits_transparent/';
-          }
-          let progress_bar = temp_filepaths.map((item, index) => item + portraits_rand[index]);
-          if (k == portraits_rand.length - 1){
-            temp_filepaths[k] = 'components/portraits_transparent/';
-          }
+        for (var k = 0; k < emotions_rand.length; k++) {
 
           // Assessing how certain subjects are of each character's guilt or innocence
           var assessment = {
             type: jsPsychImageSliderResponseModified,
-            stimulus: 'components/portraits/'+ portraits_rand[k],
+            stimulus: null,
             stimulus_height: img_size,
             stimulus_width: img_size,
-            top_images: progress_bar,
+            top_images: null,
             min: minimum,
             max: maximum, 
             slider_width: slider_width,
-            value_unit: "% Certain",
+            value_unit: "",
             button_label: "<strong>Continue</strong><br>(Only Press Once!)",
             labels: labels,
             marker_color: '#FF0000',
             marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + names_rand[k] + "</strong>" + assessment_prompt_order + assessment_prompt_end + '</p>'],
+            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
             data: {task: 'assessment ' + [k],
-                  character: names_rand[k],
+                  emotion: emotions_rand[k],
                   label_condition: label_condition[0]
             },
             on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(portraits_rand.length + 3 + preload_index_bump).values()[0].response
-              trial.marker = jsPsych.data.get().last(portraits_rand.length + 3 + preload_index_bump).values()[0].response
+              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 2 + preload_index_bump).values()[0].response
+              trial.marker = jsPsych.data.get().last(emotions_rand.length + 2 + preload_index_bump).values()[0].response
               trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
             },
             on_finish: function(data) {
