@@ -30,8 +30,8 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
   <script> 
     
-    const dev = false   // Whether this is in development; if false, the study is live
-    const pav = true    // Whether this study is being run on Pavlovia; if false, it is being run locally
+    const dev = true   // Whether this is in development; if false, the study is live
+    const pav = false    // Whether this study is being run on Pavlovia; if false, it is being run locally
     const sona = true   // Whether this study is being run on SONA; if false, it is being run on prolific
 
     // Records a timestamp of when something occurred
@@ -60,11 +60,14 @@
       const params = new URLSearchParams(url.search);
           
       // Getting which break scheme should be used with this subject 
-      const break_id = 'ES-' + ("00" + ((params.get('participant')) % 110)).slice(-3);
+      break_id = 'ES-' + ("00" + ((params.get('participant')) % 110)).slice(-3);
       
+      console.log(break_id)
+
       // Get the value associated with the 'id' parameter
       if (sona){
         subject_id = params.get('id');
+        console.log(subject_id)
       } else {
         subject_id = params.get('PROLIFIC_PID');
       }
@@ -83,6 +86,7 @@
 <!-- Determing general page style parameters -->
 <body style="background-color: rgb(200, 200, 200);">
 <script>
+
 
 var timeline = [];
 
@@ -127,12 +131,7 @@ if (sona){
 const width = 1250;
 const height = 700;
 const img_size = 300;
-
-// Assigning scale values
-var minimum = 0
-var maximum = 9
-var start = 0
-var slider_width = 700
+const scale_width = 800;
 
 // Creating a variable to track when to preload the second half video
 var second_stim_loaded = false
@@ -206,9 +205,9 @@ var background_portraits = ['components/portraits/StimImgJonathanFraser.PNG', 'c
 // Counterbalancing assessment labels
 var label_condition = jsPsych.randomization.sampleWithoutReplacement(['A', 'B'])
 if (label_condition[0] == 'A'){
-  var labels = [style_labels + '<strong>Not at all</strong></p>', style_labels + '<strong>Very much</strong></p>']
+  var labels = ['Not at all', '', '', '', '', '', '', '', '', 'Very much']
 } else {
-  var labels = [style_labels + '<strong>Very much</strong></p>', style_labels + '<strong>Not at all</strong></p>']
+  var labels = ['Very much',  '', '', '', '', '', '', '', '', 'Not at all']
 }
 
 // ------ MISCELLANEOUS -----
@@ -252,19 +251,8 @@ var instr_Intro = [
     style_instr + 'You will watch 45 minutes of a crime mystery drama in which one character is suspected of having murdered another.<br><br><br>We will present background information about the characters of the show and the surrounding context before the episode begins.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
     style_instr + 'The video will intermittently pause the video to <strong>assess how strongly you feel different emotions</strong> while you watch the show.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>',
     style_instr + "Emotional responses tend to be flexible and may shift upon hearing something that a character says or seeing something that a character does or events that occur during the show.<br><br><br>Some of these events may influence your emotions only slightly while other information may influence your emotions a great deal.<br><br><br>When prompted, please update your rating of your emotions. <br><br><br> Please try to be as precise as you can.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
-    style_instr + "These emotion assessments will be assessed on a 10-point scale. <br><br><br> The scale ranges from 'Not at all' (value of 0) to 'Very much' (value of 9).<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
+    style_instr + "These emotion assessments will be assessed on a 10-point scale. <br><br><br> The scale ranges from 'Not at all' to 'Very much'.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",
     style_instr + "After your first rating, we will mark the scale where you had last rated that emotion to hopefully make updating your emotion rating easier. <br><br><br>A statement in the center of the screen will identify which emotion you are assessing at that moment.<br><br><br>Let's look at an example of what this looks like.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>",    
-]
-
-// ------ PRACTICE RATING ------
-var instr_Practice = [ 
-    style_practice + 'You can use your mouse to move the slider left or right to indicate your rating. The current value of your rating will visualize above the scale and update as your move the slider. Press the button below the slider to submit your rating. <strong>Move the slider to indicate a value of 3 to start.</strong>' 
-]
-var instr_PracticeSuccess = [ 
-    style_instr + 'Great! If you have any questions that you must have answered before continuing, please contact study staff via the recruitment platform.<br><br><br>If you are ready to start, we will present the background information.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>' 
-]
-var instr_PracticeFailure = [ 
-    style_practice + 'It appears that an error occurred and you <strong>did not</strong> enter the correct slider value.<br><br>Try again to indicate <strong>a value of 3</strong> before we continue!' 
 ]
 
 // ------ BACKSTORY -----
@@ -285,9 +273,6 @@ var assessment_prompt_beginning = [
 ]
 var assessment_prompt_end = [
     "right now?<br>"
-]
-var marker_label = [
-    'Your Previous Rating <br> For This Emotion Was:'
 ]
 var instr_IndDiff = [
     style_instr +'You have just completed our video task! Thank you for your continued effort and attention. <br><br> In our final task, we will ask you questions about yourself. Please read the instructions before each series of questions and answer the questions honestly to the best of your abilities.<br><br><br><br> Please press the <strong>SPACE BAR</strong> to continue</p>'
@@ -327,26 +312,6 @@ if (pav){
       time_stamp(data)
     }
 	};
-}
-
-// Asking for a subject ID if running locally
-if (pav == false){
-  var PID = {
-    type: jsPsychSurveyHtmlForm,
-    preamble: 'Subject ID:',
-    html: '<p><input type="text" id="test-resp-box" name="PID" size="24" /></p>',
-    autofocus: 'test-resp-box',
-    data: {task: 'PID Entry'},
-    on_finish: function(data) {
-      var responses = data.response;
-      subject_id = responses.PID;
-      jsPsych.data.addProperties({
-        subject_id: subject_id,
-      });
-      // Getting current time
-      time_stamp(data)
-    }
-  };
 }
 
 // Preloading our consent stimuli
@@ -760,114 +725,6 @@ for (var i = 0; i < instr_Intro.length; i++) {
 // Adding portraits
 timeline.push(portraits_preload)
 
-// | - - - - - Practice - - - - - - |
-
-// Defining the success condition to move past the practice session
-if (label_condition[0] == 'A') {
-  var SuccessCondition = 3 
-} else {
-  var SuccessCondition = 6
-}
-var PracticeComplete = false
-
-// Assessing how certain subjects are of each character's guilt or innocence
-var Practice = {
-  type: jsPsychImageSliderResponseModified,
-  stimulus: null,
-  stimulus_height: img_size,
-  stimulus_width: img_size,
-  top_images: null,
-  min: minimum,
-  max: maximum,
-  slider_start: start,
-  slider_width: slider_width,
-  value_unit: "",
-  labels: labels,
-  prompt: instr_Practice,
-  data: {
-    task: 'Practice',
-    emotion: emotions_rand[0],
-    label_condition: label_condition[0],
-  },
-  on_finish: function(data) {
-    if (data.response == SuccessCondition) {
-      PracticeComplete = true
-    }
-    // Getting current time
-    time_stamp(data)
-  }
-};
-
-// Have them repeat the practice task
-var PracticeFailure = {
-  type: jsPsychImageSliderResponseModified,
-  stimulus: null,
-  stimulus_height: img_size,
-  stimulus_width: img_size,
-  top_images: null,
-  min: minimum,
-  max: maximum,
-  slider_start: start,
-  slider_width: slider_width,
-  value_unit: "",
-  labels: labels,
-  prompt: instr_PracticeFailure,
-  data: {
-    task: 'PracticeFailure',
-    emotion: emotions_rand[0],
-    label_condition: label_condition[0]
-  },
-  on_finish: function(data) {
-    if (data.response == SuccessCondition) {
-      PracticeComplete = true
-    }
-    // Getting current time
-    time_stamp(data)
-  }
-};
-
-// If the success condition hasn't been met yet, 
-var Practice_Loop = {
-  timeline: [PracticeFailure],
-  loop_function: function(){
-    if (PracticeComplete){
-      return false;
-    } else {
-      return true;
-    }
-  }
-};
-
-// If the success condition hasn't been met, start the practice loop
-// If  it has, skip the practice loop
-var Practice_Condition = {
-  timeline: [Practice_Loop],
-  conditional_function: function(){  
-    if (PracticeComplete == true) { 
-      return false;
-    } else {
-      return true;
-    }
-  }
-};
-
-// Present instructions to move on 
-var PracticeSuccess = {
-  type: jsPsychHtmlKeyboardResponse,
-  stimulus: instr_PracticeSuccess,
-  choices: [' '],
-  data: { task: 'PracticeSuccess' },
-  on_finish: function(data) {
-    // Getting current time
-    time_stamp(data)
-  }
-};
-
-// Present the practice events
-timeline.push(Practice)
-timeline.push(Practice_Condition)
-timeline.push(PracticeSuccess)
-  
 // | - - - - - Background Information - - - - - - -| 
 
   // Iterating through our sequentially-ordered array of background information
@@ -919,6 +776,26 @@ timeline.push(PracticeSuccess)
 // Giving practice instructions
 timeline.push(instr_ExpStartDisplay);
 
+// Assessing how certain subjects are of each character's guilt or innocence
+var assessment = {
+  type: jsPsychSurveyLikert,
+  preamble: style_instr + "We'll assess your current emotional state before we begin!</p>",
+  questions:[{prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[0] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+            {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[1] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+            {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[2] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+            {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[3] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+            {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[4] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+            {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[5] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true}],
+  scale_width: scale_width, 
+  data: {task: 'assessment_prestart',
+        label_condition: label_condition[0]},
+  on_finish: function(data) {
+    // Getting current time
+    time_stamp(data)
+  }
+};
+timeline.push(assessment)
+        
 // Preloading video stimuli
 timeline.push(video1_preload);
 
@@ -950,36 +827,25 @@ for (var i = 0; i < breaks.length; i++) {
     };
     timeline.push(video);
 
-    // Iterate through all of the different portraits
-    for (var k = 0; k < emotions_rand.length; k++) {
-
-      // Assessing how certain subjects are of each character's guilt or innocence
-      var assessment = {
-        type: jsPsychImageSliderResponseModified,
-        stimulus: null,
-        stimulus_height: img_size,
-        stimulus_width:img_size,
-        top_images: null,
-        min: minimum,
-        max: maximum,
-        slider_start: start, 
-        slider_width: slider_width,
-        value_unit: "",
-        button_label: "<strong>Continue</strong><br>(Only Press Once!)",
-        labels: labels,
-        prompt: [style_assess_prompt + assessment_prompt_beginning  + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
-        data: {task: 'assessment ' + [k],
-              emotion: emotions_rand[k],
-              label_condition: label_condition[0]
-        },
-        on_finish: function(data) {
-          // Getting current time
-          time_stamp(data)
-        }
-      };
-      timeline.push(assessment);
+    // Assessing how certain subjects are of each character's guilt or innocence
+    var assessment = {
+      type: jsPsychSurveyLikert,
+      questions:[{prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[0] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[1] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[2] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[3] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[4] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[5] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true}],
+      scale_width: scale_width, 
+      data: {task: 'assessment ' + [i],
+            label_condition: label_condition[0]},
+      on_finish: function(data) {
+        // Getting current time
+        time_stamp(data)
+      }
     };
-  
+    timeline.push(assessment)
+        
     // Adding the buffer function to hopefully make the assessments transition quicker and reduce the possibility of pressing the button more than once
     timeline.push(buffer)
   };
@@ -1012,41 +878,24 @@ for (var i = 0; i < breaks.length; i++) {
         };
         timeline.push(video);
 
-        // Iterate through all of the different portraits
-        for (var k = 0; k < emotions_rand.length; k++) {
-
-          // Assessing how certain subjects are of each character's guilt or innocence
-          var assessment = {
-            type: jsPsychImageSliderResponseModified,
-            stimulus: null,
-            stimulus_height: img_size,
-            stimulus_width: img_size,
-            top_images: null,
-            min: minimum,
-            max: maximum,
-            slider_width: slider_width,
-            value_unit: "",
-            button_label: "<strong>Continue</strong><br>(Only Press Once!)",
-            labels: labels,
-            marker_color: '#FF0000',
-            marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
-            data: {task: 'assessment ' + [k],
-                  emotion: emotions_rand[k],
-                  label_condition: label_condition[0]
-            },
-            on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 2).values()[0].response
-              trial.marker = jsPsych.data.get().last(emotions_rand.length + 2).values()[0].response
-              trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
-            },
-            on_finish: function(data) {
-              // Getting current time
-              time_stamp(data)
-            }
-          };
-          timeline.push(assessment)
-        };  
+        // Assessing how certain subjects are of each character's guilt or innocence
+        var assessment = {
+          type: jsPsychSurveyLikert,
+          questions:[{prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[0] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[1] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[2] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[3] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[4] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[5] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true}],
+          scale_width: scale_width, 
+          data: {task: 'assessment ' + [i],
+                label_condition: label_condition[0]},
+          on_finish: function(data) {
+            // Getting current time
+            time_stamp(data)
+          }
+        };
+        timeline.push(assessment)
         
         // Adding the buffer function to hopefully make the assessments transition quicker and reduce the possibility of pressing the button more than once
         timeline.push(buffer)          
@@ -1054,23 +903,6 @@ for (var i = 0; i < breaks.length; i++) {
       
       // If the breaks for this iteration are after the first video ends
       if (breaks[i] > 1337){
-
-        if (second_stim_loaded == false){
-
-          // Preloading video stimuli
-          timeline.push(video2_preload);
-
-          // Change the value of the variable so it doesn't repeat
-          var second_stim_loaded = true
-
-          // Increment a tracker variable
-          var preload_index_bump = 1
-
-        } else {
-
-          var preload_index_bump = 0
-
-        }
 
       // If the previous break was before the end of the first video
       if (breaks[i-1] <= (1337 + 4)){
@@ -1121,43 +953,25 @@ for (var i = 0; i < breaks.length; i++) {
         };
         timeline.push(video);
 
-        // Iterate through all of the different portraits
-        for (var k = 0; k < emotions_rand.length; k++) {
-
-          // Assessing how certain subjects are of each character's guilt or innocence
-          var assessment = {
-            type: jsPsychImageSliderResponseModified,
-            stimulus: null,
-            stimulus_height: img_size,
-            stimulus_width: img_size,
-            top_images: null,
-            min: minimum,
-            max: maximum,
-            slider_width: slider_width,
-            value_unit: "",
-            button_label: "<strong>Continue</strong><br>(Only Press Once!)",
-            labels: labels,
-            marker_color: '#FF0000',
-            marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
-            data: {task: 'assessment ' + [k],
-                  emotion: emotions_rand[k],
-                  label_condition: label_condition[0]
-            },
-            on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 5 + preload_index_bump).values()[0].response
-              trial.marker = jsPsych.data.get().last(emotions_rand.length + 5 + preload_index_bump).values()[0].response
-              trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
-            },            
-            on_finish: function(data) {
-              // Getting current time
-              time_stamp(data)
-            }
-          };
-
-          timeline.push(assessment)
-        };            
-      
+        // Assessing how certain subjects are of each character's guilt or innocence
+        var assessment = {
+          type: jsPsychSurveyLikert,
+          questions:[{prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[0] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[1] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[2] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[3] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[4] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[5] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true}],
+          scale_width: scale_width, 
+          data: {task: 'assessment ' + [i],
+                label_condition: label_condition[0]},
+          on_finish: function(data) {
+            // Getting current time
+            time_stamp(data)
+          }
+        };
+        timeline.push(assessment)
+        
         // Adding the buffer function to hopefully make the assessments transition quicker and reduce the possibility of pressing the button more than once
         timeline.push(buffer)
       }
@@ -1191,42 +1005,25 @@ for (var i = 0; i < breaks.length; i++) {
         };
         timeline.push(video);
 
-        // Iterate through all of the different portraits
-        for (var k = 0; k < emotions_rand.length; k++) {
-
-          // Assessing how certain subjects are of each character's guilt or innocence
-          var assessment = {
-            type: jsPsychImageSliderResponseModified,
-            stimulus: null,
-            stimulus_height: img_size,
-            stimulus_width: img_size,
-            top_images: null,
-            min: minimum,
-            max: maximum, 
-            slider_width: slider_width,
-            value_unit: "",
-            button_label: "<strong>Continue</strong><br>(Only Press Once!)",
-            labels: labels,
-            marker_color: '#FF0000',
-            marker_label: marker_label,
-            prompt: [style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[k] + "</strong>" + assessment_prompt_end + '</p>'],
-            data: {task: 'assessment ' + [k],
-                  emotion: emotions_rand[k],
-                  label_condition: label_condition[0]
-            },
-            on_start: function(trial) {
-              trial.slider_start = jsPsych.data.get().last(emotions_rand.length + 2 + preload_index_bump).values()[0].response
-              trial.marker = jsPsych.data.get().last(emotions_rand.length + 2 + preload_index_bump).values()[0].response
-              trial.marker_label = style_marker_label + marker_label + '<br><strong>' + Math.abs(trial.marker) + "</strong>" + trial.value_unit + "</p></div>"
-            },
-            on_finish: function(data) {
-              // Getting current time
-              time_stamp(data)
-            }
-          };
-          timeline.push(assessment)
-        };            
-      
+        // Assessing how certain subjects are of each character's guilt or innocence
+        var assessment = {
+          type: jsPsychSurveyLikert,
+          questions:[{prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[0] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[1] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[2] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[3] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[4] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true},
+                    {prompt: style_assess_prompt + assessment_prompt_beginning + "<strong>" + emotions_rand[5] + "</strong> " + assessment_prompt_end + '</p>', name: emotions_rand[0] , labels: labels, required: true}],
+          scale_width: scale_width, 
+          data: {task: 'assessment ' + [i],
+                label_condition: label_condition[0]},
+          on_finish: function(data) {
+            // Getting current time
+            time_stamp(data)
+          }
+        };
+        timeline.push(assessment)
+        
         // Adding the buffer function to hopefully make the assessments transition quicker and reduce the possibility of pressing the button more than once
         timeline.push(buffer)
       }
